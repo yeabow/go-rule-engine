@@ -7,10 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"math/rand"
-
-	"github.com/satori/go.uuid"
 )
 
 /**
