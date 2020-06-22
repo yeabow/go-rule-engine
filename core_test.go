@@ -248,9 +248,11 @@ func TestRules_FitWithMap(t *testing.T) {
 	jsonStr := []byte(`[
 	{"op": "=", "key": "Status", "val": "abcd", "id": 13},
 	{"op": "=", "key": "Name", "val": "peter", "id": 15},
-	{"op": ">=", "key": "Key", "val": 1, "id": 17}
+	{"op": ">=", "key": "Key", "val": 1, "id": 17},
+	{"op": ">", "key": "Version", "val": "2.0.1-rc.1", "id": 20},
+	{"op": "<", "key": "Version", "val": "2.0.3", "id": 21}
 	]`)
-	logic := "13 and 15"
+	logic := "13 and 20 and 21"
 	extractInfo := map[string]string{
 		"name": "",
 		"msg":  "提示",
@@ -259,7 +261,7 @@ func TestRules_FitWithMap(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	objMap := map[string]interface{}{"Status": "abcd"}
+	objMap := map[string]interface{}{"Status": "abcd", "Version": "2.0"}
 	fit, _ := rules.FitWithMap(objMap)
 	assert.False(t, fit)
 }

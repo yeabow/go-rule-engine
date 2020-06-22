@@ -3,13 +3,13 @@ package ruler
 import (
 	"encoding/json"
 	"errors"
+	"github.com/Masterminds/semver"
+	"math"
 	"math/rand"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
-
-	"math"
 )
 
 func validLogic(logic string) (string, error) {
@@ -149,6 +149,12 @@ func (rs *Rules) getTipsByRuleIDs(ids []int) map[int]string {
 }
 
 func (r *Rule) fit(v interface{}) bool {
+
+	check, err := r.checkSemver(v)
+	if err == nil {
+		return check
+	}
+
 	op := r.Op
 	// judge if need convert to uniform type
 	var ok bool
@@ -257,6 +263,68 @@ func (r *Rule) fit(v interface{}) bool {
 	default:
 		return false
 	}
+}
+
+func (r *Rule) checkSemver(v interface{}) (bool, error) {
+	op := r.Op
+	if strings.HasSuffix(strings.ToLower(r.Key), "version") {
+		ver1, ok := r.Val.(string)
+		if ok {
+			validate := true
+			ver2, ok := v.(string)
+			if ok {
+				/*v1len := len(strings.Split(ver1, "."))
+				v2len := len(strings.Split(ver2, "."))
+				if v1len > 4 || v2len > 4 {
+					validate = false
+				} else {
+					if v1len != v2len {
+						if v1len > v2len {
+							for i:=0; i< v1len - v2len; i++ {
+								//ver2 += ".0"
+							}
+						} else if v1len < v2len {
+							for i:=0; i< v2len - v1len; i++ {
+								//ver1 += ".0"
+							}
+						}
+					}
+				}*/
+			} else {
+				validate = false
+			}
+
+			if validate {
+
+				ver1 = repair(ver1)
+
+				constraint, err := semver.NewConstraint(op + " " + ver1)
+
+				if err == nil {
+
+					ver2 = repair(ver2)
+
+					version, err := semver.NewVersion(ver2)
+					if err == nil {
+						return constraint.Check(version), nil
+					}
+				}
+
+			}
+		}
+	}
+	return false, errors.New("invalid semver")
+}
+
+func repair(ver string) string {
+	if len(strings.Split(ver, ".")) > 3 {
+		//4位版本号，不含'-'，转rc版本
+		if strings.Index(ver, "-") == -1 {
+			versions := strings.Split(ver, ".")
+			return versions[0] + "." + versions[1] + "." + versions[2] + "-rc." + versions[3]
+		}
+	}
+	return ver
 }
 
 func pluck(key string, o map[string]interface{}) interface{} {
@@ -480,7 +548,7 @@ func isIn(needle, haystack string, isNeedleNum bool) bool {
 			if err != nil {
 				continue
 			}
-			if math.Abs(iNum-oNum) < 1E-5 {
+			if math.Abs(iNum-oNum) < 1e-5 {
 				// 考虑浮点精度问题
 				return true
 			}
