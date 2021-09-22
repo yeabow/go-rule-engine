@@ -150,8 +150,11 @@ func (rs *Rules) getTipsByRuleIDs(ids []int) map[int]string {
 
 func (r *Rule) fit(v interface{}) bool {
 
-	check, err := r.checkSemver(v)
-	if err == nil {
+	if check, err := r.checkSemver(v); err == nil {
+		return check
+	}
+
+	if check, err := r.checkIP(v); err == nil {
 		return check
 	}
 
@@ -263,6 +266,21 @@ func (r *Rule) fit(v interface{}) bool {
 	default:
 		return false
 	}
+}
+
+func (r *Rule) checkIP(v interface{}) (bool, error) {
+	if strings.HasSuffix(strings.ToLower(r.Key), "ip") {
+		ver1, ok := r.Val.(string)
+		if ok {
+			ver2, ok := v.(string)
+			if ok {
+				if len(strings.Split(ver2, ".")) == 4 {
+					return CheckIP(ver2, ver1), nil
+				}
+			}
+		}
+	}
+	return false, errors.New("invalid ip")
 }
 
 func (r *Rule) checkSemver(v interface{}) (bool, error) {

@@ -37,6 +37,16 @@ func TestRule_Fit(t *testing.T) {
 	assert.True(t, result)
 }
 
+func TestRule_FitIP(t *testing.T) {
+	rule := &Rule{
+		Op:  "x",
+		Key: "x-local-ip",
+		Val: "192.168.0.0/32,192.168.1.21-23",
+	}
+	result := rule.fit("192.168.1.22")
+	assert.True(t, result)
+}
+
 func TestRule_Fit1(t *testing.T) {
 	rule := &Rule{
 		Op:  "@@",
