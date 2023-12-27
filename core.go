@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Masterminds/semver"
+	"github.com/tidwall/gjson"
 	"math"
 	"math/rand"
 	"reflect"
@@ -351,14 +352,27 @@ func pluck(key string, o map[string]interface{}) interface{} {
 	}
 	paths := strings.Split(key, ".")
 	var ok bool
+	var _o map[string]interface{}
 	for index, step := range paths {
 		// last step is object key
 		if index == len(paths)-1 {
 			return o[step]
 		}
 		// explore deeper
-		if o, ok = o[step].(map[string]interface{}); !ok {
-			return nil
+		if _o, ok = o[step].(map[string]interface{}); !ok {
+			data, err := json.Marshal(o)
+			if err != nil {
+				return nil
+			}
+			_key := strings.Join(paths[index:], ".")
+			r := gjson.GetBytes(data, _key)
+			if r.Exists() {
+				return r.Value()
+			} else {
+				return nil
+			}
+		} else {
+			o = _o
 		}
 	}
 	return nil
