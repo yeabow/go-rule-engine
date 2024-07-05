@@ -160,6 +160,13 @@ func (r *Rule) fit(v interface{}) bool {
 		return check
 	}
 
+	if v == nil && r.Val != nil {
+		if r.Val == "false" {
+			return true
+		}
+		return false
+	}
+
 	op := r.Op
 	// judge if need convert to uniform type
 	var ok bool

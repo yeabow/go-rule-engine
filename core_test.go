@@ -117,6 +117,16 @@ func TestRule_Fit18(t *testing.T) {
 	assert.False(t, result)
 }
 
+func TestRule_Fit19(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "false",
+	}
+	result := rule.fit(nil)
+	assert.True(t, result)
+}
+
 func TestRule_FitIP(t *testing.T) {
 	rule := &Rule{
 		Op:  "x",
