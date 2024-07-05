@@ -3,6 +3,7 @@ package ruler
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/Masterminds/semver"
 	"github.com/tidwall/gjson"
 	"math"
@@ -165,26 +166,48 @@ func (r *Rule) fit(v interface{}) bool {
 	// index-0 actual, index-1 expect
 	var pairStr = make([]string, 2)
 	var pairNum = make([]float64, 2)
-	var isStr, isNum, isObjStr, isRuleStr bool
-	pairStr[0], ok = v.(string)
+	var pairBool = make([]bool, 2)
+	var isStr, isNum, isBool, isObjStr, isRuleStr bool
+	pairBool[0], ok = v.(bool)
 	if !ok {
-		pairNum[0] = formatNumber(v)
+		pairStr[0], ok = v.(string)
+		if !ok {
+			pairNum[0] = formatNumber(v)
+			isStr = false
+			isNum = true
+			isObjStr = false
+		} else {
+			isStr = true
+			isNum = false
+			isObjStr = true
+		}
+	} else {
+		isBool = true
+		isNum = false
 		isStr = false
-		isNum = true
 		isObjStr = false
-	} else {
-		isStr = true
-		isNum = false
-		isObjStr = true
 	}
-	pairStr[1], ok = r.Val.(string)
-	if !ok {
-		pairNum[1] = formatNumber(r.Val)
-		isStr = false
-		isRuleStr = false
+
+	if isBool {
+		if b, err := strconv.ParseBool(fmt.Sprintf("%v", r.Val)); err == nil {
+			pairBool[1] = b
+		} else {
+			isBool = false
+		}
 	} else {
-		isNum = false
-		isRuleStr = true
+		if isNum {
+			pairNum[1] = formatNumber(r.Val)
+		} else {
+			pairStr[1], ok = r.Val.(string)
+			if !ok {
+				pairNum[1] = formatNumber(r.Val)
+				isStr = false
+				isRuleStr = false
+			} else {
+				isNum = false
+				isRuleStr = true
+			}
+		}
 	}
 
 	var flagOpIn bool
@@ -197,12 +220,15 @@ func (r *Rule) fit(v interface{}) bool {
 	}
 
 	// if types different, ignore in & nin
-	if !isStr && !isNum && !flagOpIn {
+	if !isStr && !isNum && !isBool && !flagOpIn {
 		return false
 	}
 
 	switch op {
 	case "=", "eq":
+		if isBool {
+			return pairBool[0] == pairBool[1]
+		}
 		if isNum {
 			return pairNum[0] == pairNum[1]
 		}
@@ -243,6 +269,9 @@ func (r *Rule) fit(v interface{}) bool {
 		}
 		return false
 	case "!=", "neq":
+		if isBool {
+			return pairBool[0] != pairBool[1]
+		}
 		if isNum {
 			return pairNum[0] != pairNum[1]
 		}
@@ -404,6 +433,16 @@ func formatNumber(v interface{}) float64 {
 		return float64(t)
 	case float64:
 		return t
+	case string:
+		if i, err := strconv.ParseFloat(t, 64); err == nil {
+			return i
+		}
+		return 0
+	case bool:
+		if t {
+			return 1
+		}
+		return 0
 	default:
 		return 0
 	}

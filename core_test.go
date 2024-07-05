@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewRulesWithJSON(t *testing.T) {
-	jsonStr := []byte(`[{"op": "=", "key": "status", "val": 1}]`)
+	jsonStr := []byte(`[{"op": "=", "key": "status", "val": true}]`)
 	rules, err := newRulesWithJSON(jsonStr)
 	if err != nil {
 		t.Error(err)
@@ -15,7 +15,7 @@ func TestNewRulesWithJSON(t *testing.T) {
 	rule := &Rule{
 		Op:  "=",
 		Key: "status",
-		Val: float64(1),
+		Val: true,
 		ID:  2,
 	}
 	assert.Equal(t, rule, rules.Rules[0])
@@ -31,10 +31,90 @@ func TestRule_Fit(t *testing.T) {
 	rule := &Rule{
 		Op:  "=",
 		Key: "status",
-		Val: 0,
+		Val: "1",
 	}
-	result := rule.fit(0)
+	result := rule.fit("1")
 	assert.True(t, result)
+}
+
+func TestRule_Fit11(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "1",
+	}
+	result := rule.fit(1)
+	assert.True(t, result)
+}
+
+func TestRule_Fit12(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: 1,
+	}
+	result := rule.fit(1)
+	assert.True(t, result)
+}
+
+func TestRule_Fit13(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: true,
+	}
+	result := rule.fit(true)
+	assert.True(t, result)
+}
+
+func TestRule_Fit14(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "1",
+	}
+	result := rule.fit(true)
+	assert.True(t, result)
+}
+
+func TestRule_Fit15(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "true",
+	}
+	result := rule.fit(true)
+	assert.True(t, result)
+}
+
+func TestRule_Fit16(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "false",
+	}
+	result := rule.fit(false)
+	assert.True(t, result)
+}
+
+func TestRule_Fit17(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "0",
+	}
+	result := rule.fit(false)
+	assert.True(t, result)
+}
+
+func TestRule_Fit18(t *testing.T) {
+	rule := &Rule{
+		Op:  "=",
+		Key: "status",
+		Val: "2",
+	}
+	result := rule.fit(false)
+	assert.False(t, result)
 }
 
 func TestRule_FitIP(t *testing.T) {
