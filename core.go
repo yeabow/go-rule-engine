@@ -287,9 +287,11 @@ func (r *Rule) fit(v interface{}) bool {
 		}
 		return false
 	case "@", "in":
-		return isIn(pairStr[0], pairStr[1], !isObjStr)
+		return isIn(pairStr[0], pairStr[1], !isObjStr, true)
+	case "contains":
+		return isIn(pairStr[0], pairStr[1], !isObjStr, false)
 	case "!@", "nin":
-		return !isIn(pairStr[0], pairStr[1], !isObjStr)
+		return !isIn(pairStr[0], pairStr[1], !isObjStr, true)
 	case "^$", "regex":
 		return checkRegex(pairStr[1], pairStr[0])
 	case "0", "empty":
@@ -608,7 +610,7 @@ func computeOneInLogic(op string, v []bool) (bool, error) {
 	}
 }
 
-func isIn(needle, haystack string, isNeedleNum bool) bool {
+func isIn(needle, haystack string, isNeedleNum bool, exact bool) bool {
 	// get number of needle
 	var iNum float64
 	var err error
@@ -618,7 +620,17 @@ func isIn(needle, haystack string, isNeedleNum bool) bool {
 		}
 	}
 	// compatible to "1, 2, 3" and "1,2,3"
-	li := strings.Split(haystack, ",")
+	r := gjson.Parse(haystack)
+	var li []string
+	if r.IsArray() {
+		r.ForEach(func(_, value gjson.Result) bool {
+			li = append(li, value.String())
+			return true
+		})
+	} else {
+		li = strings.Split(haystack, ",")
+	}
+
 	for _, o := range li {
 		trimO := strings.TrimLeft(o, " ")
 		if isNeedleNum {
@@ -630,8 +642,16 @@ func isIn(needle, haystack string, isNeedleNum bool) bool {
 				// 考虑浮点精度问题
 				return true
 			}
-		} else if needle == trimO {
-			return true
+		} else {
+			if exact {
+				if needle == trimO {
+					return true
+				}
+			} else {
+				if strings.Contains(needle, trimO) {
+					return true
+				}
+			}
 		}
 	}
 	return false
